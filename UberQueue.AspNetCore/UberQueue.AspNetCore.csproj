@@ -12,7 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Streams\UberStreams\UberQueue.Core.csproj" />
+    <ProjectReference Include="..\UberQueue.Core\UberQueue.Core.csproj" />
   </ItemGroup>
-
 </Project>
