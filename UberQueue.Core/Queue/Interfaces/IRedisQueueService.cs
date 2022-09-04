@@ -7,5 +7,6 @@ namespace UberQueue.Core.Queue.Interfaces
     {
         Task<RedisValue[]?> Dequeue(string sortedSetKey, int batchSize = 500);
         Task Enqueue(string sortedSetKey, JobData data, DateTimeOffset timeToExecute);
+        Task Process(RedisValue[]? values);
     }
 }

@@ -12,4 +12,8 @@
     <PackageReference Include="StackExchange.Redis" Version="2.6.48" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\UberQueue.AspNetCore\UberQueue.AspNetCore.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -2,7 +2,7 @@
 
 namespace UberQueue.Core.Queue.Interfaces
 {
-    public interface IRedisConsumerWrapper<T>
+    public interface IRedisConsumerWrapper<T> : IRedisWrapper
     {
         IRedisConsumer<T> Consumer { get; }
     }

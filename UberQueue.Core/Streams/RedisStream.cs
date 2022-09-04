@@ -44,25 +44,31 @@ namespace UberQueue.Core.Streams
 
                 foreach (var ret in results)
                 {
-                    try
+                    if (ret.Values.Length > 0)
                     {
-                        if (ret.Values.Length > 0)
+                        try
                         {
                             T? message = JsonConvert.DeserializeObject<T>(ret.Values[0].Value!);
 
                             if (message != null)
                             {
-                                await consumeFunc(message);
+                                try
+                                {
+                                    await consumeFunc(message);
+                                }
+                                catch (Exception e)
+                                {
+                                    continue;
+                                }
                             }
                         }
+                        catch (Exception)
+                        {
+                            continue;
+                        }
                     }
-                    catch (Exception e)
-                    {
-
-                    }
-
-                    await _redisDatabase.StreamAcknowledgeAsync(_config.StreamName, _config.GroupName, results.Select(r => r.Id).ToArray());
                 }
+                await _redisDatabase.StreamAcknowledgeAsync(_config.StreamName, _config.GroupName, results.Select(r => r.Id).ToArray());
             }
         }
 

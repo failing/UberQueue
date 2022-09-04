@@ -1,7 +1,4 @@
 ﻿using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
-using StackExchange.Redis;
-using UberQueue.Core.Jobs;
 using UberQueue.Core.Queue.Interfaces;
 
 namespace UberQueue.Core.Queue
@@ -9,14 +6,12 @@ namespace UberQueue.Core.Queue
     public class RedisJobBackgroundService : BackgroundService
     {
         private readonly IRedisQueueService _redisQueueService;
-        private readonly IRedisRouter _redisRouter;
         private readonly RedisJobServiceConfig _config;
 
-        public RedisJobBackgroundService(IRedisQueueService queueService, RedisJobServiceConfig config, IRedisRouter redisRouter)
+        public RedisJobBackgroundService(IRedisQueueService queueService, RedisJobServiceConfig config)
         {
             _redisQueueService = queueService;
             _config = config;
-            _redisRouter = redisRouter;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -27,41 +22,13 @@ namespace UberQueue.Core.Queue
 
                 if (results?.Length > 0)
                 {
-                    await ProcessResults(results);
+                    await _redisQueueService.Process(results);
                 }
                 else
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await Task.Delay(TimeSpan.FromSeconds(25));
                 }
             }
-        }
-
-        private async Task ProcessResults(RedisValue[]? results)
-        {
-            _ = Parallel.ForEach(results!, async result =>
-            {
-                JobObject? jobData = JsonConvert.DeserializeObject<JobObject>(result!);
-
-                if (jobData != null)
-                {
-                    if (jobData is JobObject)
-                    {
-                        var jobObject = jobData;
-
-                        var jobObjectPayload = jobObject.Payload;
-
-                        await _redisRouter.Route(jobObjectPayload);
-                    }
-                    else if (jobData is JobObject)
-                    {
-                        var jobObject = jobData;
-
-                        var jobObjectPayload = jobObject.Payload;
-
-                        await _redisRouter.Route(jobObjectPayload);
-                    }
-                }
-            });
         }
     }
 }

@@ -1,4 +1,6 @@
 using StackExchange.Redis;
+using UberQueue.AspNetCore.Configuration;
+using UberQueue.Samples;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,19 +14,22 @@ var token = tokenSource.Token;
 var muxer = ConnectionMultiplexer.Connect("localhost");
 var db = muxer.GetDatabase();
 builder.Services.AddSingleton<IDatabase>(db);
-//builder.Services.AddUberRedisQueue((config, x) =>
-//{
-//    config.BatchSize = 100;
-//    config.Key = "jobs";
 
-//    x.AddConsumer<TestConsumer>();
-//    x.AddConsumer<TestConsumerWithDI>();
+builder.Services.AddUberRedisQueue((config, x) =>
+{
+    config.BatchSize = 100;
+    config.Key = "jobs";
 
-//    x.ConfigureRedis((options, endpoints) =>
-//    {
-//        endpoints.Add("localhost");
-//    });
-//});
+    x.AddConsumer<WeatherConsumer>(op =>
+    {
+        op.UseStreams = true;
+    });
+
+    x.ConfigureRedis((options, endpoints) =>
+    {
+        endpoints.Add("localhost");
+    });
+});
 
 var app = builder.Build();
 

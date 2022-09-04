@@ -1,14 +1,20 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using UberQueue.Core.Consumers;
-using UberQueue.Core.Queue;
 using UberQueue.Core.Queue.Interfaces;
+using UberQueue.Core.Streams;
 
 namespace UberQueue.AspNetCore.Configuration
 {
     public class UberRedisConfigurator : IUberRedisConfigurator
     {
+        public List<Type> ConsumerClasses => _consumerTypes;
+        public List<Type> ConsumerStreamerClasses => _consumerStreamerTypes;
+
         private readonly IServiceCollection _serviceCollection;
+        private readonly List<Type> _consumerTypes = new List<Type>();
+        private readonly List<Type> _consumerStreamerTypes = new List<Type>();
+
         public UberRedisConfigurator(IServiceCollection services)
         {
             _serviceCollection = services;
@@ -32,17 +38,32 @@ namespace UberQueue.AspNetCore.Configuration
             });
         }
 
-        public IUberRedisConfigurator AddConsumer<T>() where T : class, IConsumer
+        public IUberRedisConfigurator AddConsumer<T>(Action<RedisConsumerOptions>? streamActions = null) where T : class, IConsumer
         {
             Type redisConsumer = typeof(T).GetInterfaces()[0];
+            Type consumerClass = redisConsumer.GenericTypeArguments[0];
+
+            if (_consumerTypes.Contains(consumerClass))
+            {
+                throw new Exception();
+            }
+
+            _consumerTypes.Add(consumerClass);
 
             _serviceCollection.AddSingleton(redisConsumer, typeof(T));
 
-            Type consumerClass = redisConsumer.GenericTypeArguments[0];
-            Type redisWrapper = typeof(IRedisConsumerWrapper<>).MakeGenericType(consumerClass);
-            Type redisWrapperClass = typeof(RedisConsumerWrapper<>).MakeGenericType(consumerClass);
+            RedisConsumerOptions options = new RedisConsumerOptions();
+            streamActions?.Invoke(options);
 
-            _serviceCollection.AddSingleton(redisWrapper, redisWrapperClass);
+            if (options.UseStreams)
+            {
+                _consumerStreamerTypes.Add(consumerClass);
+                Type redisStream = typeof(IRedisStream<>).MakeGenericType(consumerClass);
+                Type redisStreamClass = typeof(RedisStream<>).MakeGenericType(consumerClass);
+
+                _serviceCollection.AddSingleton(redisStream, redisStreamClass);
+                _serviceCollection.AddSingleton(new RedisStreamConfig() { });
+            }
 
             return this;
         }

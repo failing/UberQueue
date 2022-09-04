@@ -5,20 +5,24 @@ using UberQueue.Core.Queue.Interfaces;
 
 namespace UberQueue.Core.Queue
 {
-    public class RedisQueueService : IRedisQueueService
+    public class RedisQueueStreamService : IRedisQueueService
     {
         private readonly LuaScript _luaScript = LuaScript.Prepare(@"
                             local setValues = redis.call(""ZRANGE"", @sortedSetKey, ""-inf"", @utcMsTimestamp, ""BYSCORE"", ""LIMIT"", 0, @batch)
-	                        if (next(setValues) ~= nil) then redis.call(""ZREM"", @sortedSetKey, unpack(setValues)) end
+	                        if (next(setValues) ~= nil)
+                                then
+                                    redis.call(""ZREM"", @sortedSetKey, unpack(setValues))
+                                    for v in unpack(setValues) do
+                                        redis.call(""XADD"", @streamName, *, ""object"", @value)
+                                    end
+                                end
 	                        return setValues");
 
         private readonly IDatabase _redisDatabase;
-        private readonly IRedisRouter _redisRouter;
 
-        public RedisQueueService(IDatabase redisDatabase, IRedisRouter redisRouter)
+        public RedisQueueStreamService(IDatabase redisDatabase)
         {
             _redisDatabase = redisDatabase;
-            _redisRouter = redisRouter;
         }
 
         public async Task Enqueue(string sortedSetKey, JobData data, DateTimeOffset timeToExecute)
@@ -39,19 +43,9 @@ namespace UberQueue.Core.Queue
             return sortedSetValues;
         }
 
-        public async Task Process(RedisValue[]? values)
+        public Task Process(RedisValue[]? values)
         {
-            _ = Parallel.ForEach(values!, async result =>
-            {
-                JobObject? jobData = JsonConvert.DeserializeObject<JobObject>(result!);
-
-                if (jobData != null)
-                {
-                    var jobObjectPayload = jobData.Payload;
-
-                    await _redisRouter.Route(jobObjectPayload);
-                }
-            });
+            return Task.CompletedTask;
         }
     }
 }
