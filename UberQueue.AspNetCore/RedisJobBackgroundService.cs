@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
+using UberQueue.Core.Queue;
 
-namespace UberQueue.Core.Queue
+namespace UberQueue.AspNetCore
 {
     public class RedisJobBackgroundService : BackgroundService
     {
