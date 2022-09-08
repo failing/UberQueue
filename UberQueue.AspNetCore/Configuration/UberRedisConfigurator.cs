@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using UberQueue.Core.Consumers;
-using UberQueue.Core.Queue.Interfaces;
 using UberQueue.Core.Streams;
 
 namespace UberQueue.AspNetCore.Configuration
@@ -49,7 +48,6 @@ namespace UberQueue.AspNetCore.Configuration
             }
 
             _consumerTypes.Add(consumerClass);
-
             _serviceCollection.AddSingleton(redisConsumer, typeof(T));
 
             RedisConsumerOptions options = new RedisConsumerOptions();
@@ -60,9 +58,10 @@ namespace UberQueue.AspNetCore.Configuration
                 _consumerStreamerTypes.Add(consumerClass);
                 Type redisStream = typeof(IRedisStream<>).MakeGenericType(consumerClass);
                 Type redisStreamClass = typeof(RedisStream<>).MakeGenericType(consumerClass);
+                Type redisStreamConfig = typeof(RedisStreamConfig<>).MakeGenericType(consumerClass);
 
                 _serviceCollection.AddSingleton(redisStream, redisStreamClass);
-                _serviceCollection.AddSingleton(new RedisStreamConfig() { });
+                _serviceCollection.AddSingleton(redisStreamConfig);
             }
 
             return this;

@@ -4,7 +4,7 @@ using UberQueue.Core.Jobs;
 
 namespace UberQueue.Core.Serialisation
 {
-    public class UknownTypeConverter : JsonConverter
+    public class UnknownTypeConverter : JsonConverter
     {
         public override void WriteJson(
             JsonWriter writer, object value, JsonSerializer serializer)

@@ -6,23 +6,23 @@ namespace UberQueue.Core.Streams
     public class RedisStream<T> : IRedisStream<T>
     {
         private readonly IDatabase _redisDatabase;
-        private readonly RedisStreamConfig _config;
+        private readonly RedisStreamConfig<T> _config;
 
-        public RedisStream(IDatabase redisDatabase, RedisStreamConfig config)
+        public RedisStream(IDatabase redisDatabase, RedisStreamConfig<T> config)
         {
             _config = config;
             _redisDatabase = redisDatabase;
 
-            if (_config.GroupName != null)
+            if (_config.ConsumerGroup != null)
             {
-                if (_config.GroupName == null)
+                if (_config.ConsumerGroup == null)
                 {
-                    _config.GroupName = Guid.NewGuid().ToString();
+                    _config.ConsumerGroup = Guid.NewGuid().ToString();
                 }
 
-                if (!_redisDatabase.KeyExists(_config.StreamName) || _redisDatabase.StreamGroupInfo(_config.StreamName).All(r => r.Name != _config.GroupName))
+                if (!_redisDatabase.KeyExists(_config.StreamName) || _redisDatabase.StreamGroupInfo(_config.StreamName).All(r => r.Name != _config.ConsumerGroup))
                 {
-                    _redisDatabase.StreamCreateConsumerGroup(_config.StreamName, _config.ConsumerGroup, ">", true);
+                    _redisDatabase.StreamCreateConsumerGroup(_config.StreamName, _config.ConsumerGroup, StreamPosition.NewMessages, true);
                 }
             }
         }
@@ -31,15 +31,15 @@ namespace UberQueue.Core.Streams
         {
             while (!cancellation.IsCancellationRequested)
             {
-                StreamEntry[]? results = new StreamEntry[] { };
+                StreamEntry[]? results;
 
-                if (_config.GroupName == null)
+                if (_config.ConsumerGroup == null)
                 {
                     results = await _redisDatabase.StreamReadAsync(_config.StreamName, ">", 50);
                 }
                 else
                 {
-                    results = await _redisDatabase.StreamReadGroupAsync(_config.StreamName, _config.GroupName, _config.ConsumerGroup, ">", 50);
+                    results = await _redisDatabase.StreamReadGroupAsync(_config.StreamName, _config.ConsumerGroup, _config.ConsumerName, ">");
                 }
 
                 foreach (var ret in results)
@@ -66,9 +66,9 @@ namespace UberQueue.Core.Streams
                         {
                             continue;
                         }
+                        await _redisDatabase.StreamAcknowledgeAsync(_config.StreamName, _config.ConsumerGroup, ret.Id);
                     }
                 }
-                await _redisDatabase.StreamAcknowledgeAsync(_config.StreamName, _config.GroupName, results.Select(r => r.Id).ToArray());
             }
         }
 

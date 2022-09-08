@@ -8,6 +8,9 @@ namespace UberQueue.Core.Jobs
     [JsonSubtypes.KnownSubType(typeof(JobExpression), JobDataType.Expression)]
     public abstract class JobData
     {
+        [JsonProperty("key")]
+        public string Key => Guid.NewGuid().ToString();
+
         [JsonProperty("job_type")]
         public abstract JobDataType JobType { get; }
     }

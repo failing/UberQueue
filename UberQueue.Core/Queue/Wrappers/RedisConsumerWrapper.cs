@@ -1,7 +1,6 @@
 ﻿using UberQueue.Core.Consumers;
-using UberQueue.Core.Queue.Interfaces;
 
-namespace UberQueue.Core.Queue
+namespace UberQueue.Core.Queue.Wrappers
 {
     public class RedisConsumerWrapper<T> : IRedisConsumerWrapper<T>
     {

@@ -1,11 +1,10 @@
 ﻿using Newtonsoft.Json;
 using StackExchange.Redis;
 using UberQueue.Core.Jobs;
-using UberQueue.Core.Queue.Interfaces;
 
 namespace UberQueue.Core.Queue
 {
-    public class RedisQueueService : IRedisQueueService
+    public class RedisDirectQueueService : IRedisDirectQueue
     {
         private readonly LuaScript _luaScript = LuaScript.Prepare(@"
                             local setValues = redis.call(""ZRANGE"", @sortedSetKey, ""-inf"", @utcMsTimestamp, ""BYSCORE"", ""LIMIT"", 0, @batch)
@@ -15,7 +14,7 @@ namespace UberQueue.Core.Queue
         private readonly IDatabase _redisDatabase;
         private readonly IRedisRouter _redisRouter;
 
-        public RedisQueueService(IDatabase redisDatabase, IRedisRouter redisRouter)
+        public RedisDirectQueueService(IDatabase redisDatabase, IRedisRouter redisRouter)
         {
             _redisDatabase = redisDatabase;
             _redisRouter = redisRouter;

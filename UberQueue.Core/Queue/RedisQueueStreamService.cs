@@ -1,22 +1,22 @@
 ﻿using Newtonsoft.Json;
 using StackExchange.Redis;
 using UberQueue.Core.Jobs;
-using UberQueue.Core.Queue.Interfaces;
 
 namespace UberQueue.Core.Queue
 {
-    public class RedisQueueStreamService : IRedisQueueService
+    public class RedisQueueStreamService : IRedisQueueStreamService
     {
         private readonly LuaScript _luaScript = LuaScript.Prepare(@"
                             local setValues = redis.call(""ZRANGE"", @sortedSetKey, ""-inf"", @utcMsTimestamp, ""BYSCORE"", ""LIMIT"", 0, @batch)
-	                        if (next(setValues) ~= nil)
+                            if (next(setValues) ~= nil)
                                 then
                                     redis.call(""ZREM"", @sortedSetKey, unpack(setValues))
-                                    for v in unpack(setValues) do
-                                        redis.call(""XADD"", @streamName, *, ""object"", @value)
+                                    for i = 1, #setValues do
+                                        local a = cjson.decode(setValues[i]);
+                                        redis.call(""XADD"", a.payload_type_short, ""*"", ""object"", setValues[i])
                                     end
                                 end
-	                        return setValues");
+                            return setValues");
 
         private readonly IDatabase _redisDatabase;
 
@@ -32,20 +32,13 @@ namespace UberQueue.Core.Queue
             await _redisDatabase.SortedSetAddAsync(sortedSetKey, serializedJob, timeToExecute.ToUnixTimeMilliseconds());
         }
 
-        public async Task<RedisValue[]?> Dequeue(string sortedSetKey, int batchSize = 500)
+        public async Task Dequeue(string sortedSetKey, int batchSize = 500)
         {
             double utcLimitTS = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             object redisParams = new { sortedSetKey = new RedisKey(sortedSetKey), utcMsTimestamp = utcLimitTS, batch = batchSize };
 
-            RedisValue[]? sortedSetValues = (RedisValue[]?)await _redisDatabase.ScriptEvaluateAsync(_luaScript, redisParams);
-
-            return sortedSetValues;
-        }
-
-        public Task Process(RedisValue[]? values)
-        {
-            return Task.CompletedTask;
+            await _redisDatabase.ScriptEvaluateAsync(_luaScript, redisParams);
         }
     }
 }

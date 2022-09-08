@@ -1,6 +1,6 @@
 ﻿using UberQueue.Core.Consumers;
 
-namespace UberQueue.Core.Queue.Interfaces
+namespace UberQueue.Core.Queue.Wrappers
 {
     public interface IRedisConsumerWrapper<T> : IRedisWrapper
     {

@@ -1,10 +1,11 @@
 using StackExchange.Redis;
 using UberQueue.AspNetCore.Configuration;
+using UberQueue.Core.Jobs;
+using UberQueue.Core.Queue;
 using UberQueue.Samples;
+using UberRedQueueApi;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
 
 builder.Services.AddControllers();
 
@@ -25,6 +26,8 @@ builder.Services.AddUberRedisQueue((config, x) =>
         op.UseStreams = true;
     });
 
+    x.AddConsumer<TestConsumer>();
+
     x.ConfigureRedis((options, endpoints) =>
     {
         endpoints.Add("localhost");
@@ -37,18 +40,21 @@ app.Map("/", async () =>
 {
     using (var scope = app.Services.CreateScope())
     {
-        //var sampleService = scope.ServiceProvider.GetRequiredService<IRedisQueueService>();
+        var sampleService = scope.ServiceProvider.GetRequiredService<IRedisQueueManager>();
 
-        //var jobdata = new RecurringJobObject()
-        //{
-        //    Payload = new WeatherForecast()
-        //    {
-        //        Date = DateTime.Now,
-        //    },
-        //    PayloadType = typeof(WeatherForecast),
-        //    Recurrence = "Test"
-        //};
-        //await sampleService.Enqueue("jobs", jobdata, DateTimeOffset.UtcNow.AddSeconds(2));
+        var jobdata = new RecurringJobObject()
+        {
+            Payload = new WeatherForecast()
+            {
+                Date = DateTime.Now,
+            },
+            Recurrence = "Test"
+        };
+
+        for (int i = 0; i < 100; i++)
+        {
+            await sampleService.Enqueue(jobdata, DateTimeOffset.UtcNow.AddSeconds(15));
+        }
     }
 });
 

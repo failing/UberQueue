@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace UberQueue.Core.Queue.Interfaces
+namespace UberQueue.Core.Queue
 {
     public interface IRedisWrapper
     {

@@ -1,8 +1,7 @@
 ﻿using UberQueue.Core.Consumers;
-using UberQueue.Core.Queue.Interfaces;
 using UberQueue.Core.Streams;
 
-namespace UberQueue.Core.Queue
+namespace UberQueue.Core.Queue.Wrappers
 {
     public class RedisConsumerStreamWrapper<T> : IRedisConsumerStreamWrapper<T>, IDisposable
     {
