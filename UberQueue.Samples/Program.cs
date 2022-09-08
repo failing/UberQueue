@@ -12,10 +12,6 @@ builder.Services.AddControllers();
 var tokenSource = new CancellationTokenSource();
 var token = tokenSource.Token;
 
-var muxer = ConnectionMultiplexer.Connect("localhost");
-var db = muxer.GetDatabase();
-builder.Services.AddSingleton<IDatabase>(db);
-
 builder.Services.AddUberRedisQueue((config, x) =>
 {
     config.BatchSize = 100;
