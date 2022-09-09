@@ -35,8 +35,5 @@ namespace UberQueue.Core.Jobs
 
         [JsonProperty("payload_type_short")]
         public string PayloadTypeShortName { get; set; }
-
-        [JsonProperty("max_num_failures")]
-        public int MaxNumberOfFailures { get; set; } = 5;
     }
 }
